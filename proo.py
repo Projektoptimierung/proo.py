@@ -8,7 +8,6 @@ rl=instanzen.readlines()
 komprate=raw_input('Wieviele Werte sollen jeweils zusammengefasst werden? ')
 lrl=int(komprate)	# Eingabe als Zahl auffassen
 
-fahrzeiten={}	# fahrzeiten dictionairy, einfacher beim Zugriff
 lepr={}		# leistungsprofil dictionairy {zugnummer:array(leistungswerte)}
 spab={}		# spaeteste abfahrtszeit dictionairy {zugnummer:spaeteste abfahrtszeit}
 mindesthaltezeit={}	# {zugnummer: [strecke, mindesthaltezeit]}
