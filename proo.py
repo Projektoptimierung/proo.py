@@ -12,6 +12,7 @@ lepr={}		# leistungsprofil dictionairy {zugnummer:array(leistungswerte)}
 spab={}		# spaeteste abfahrtszeit dictionairy {zugnummer:spaeteste abfahrtszeit}
 mindesthaltezeit={}	# {zugnummer: [strecke, mindesthaltezeit]}
 tm=0		# temporaere valiable speichert in der folgenden Schleife die Zeile vor der aktuellen
+fahrzeiten={}
 mz=0
 
 for l in range(len(rl)):
@@ -122,21 +123,27 @@ def check(zugnr):
   start=0
   sh=sw
   return move(sh,start,tl,zugnr)
-	 
+
+moeglicheabfahrt={}  
+for i in range(1,az+1):  
+    moeglicheabfahrt.update({i:[]})		# {zugnr: Abfahrtszeit}
+  
 def move(schwelle,start, tl, zugnr):
     movelist=[0]*start+tl
     for i in range(len(movelist)):
       if movelist[i]+leertray[i]>schwelle*2:
-	  if start<(spab[zugnr])*600/lrl:
+	  if start<(spab[zugnr])*600/lrl:		# BEWEGUNG
 	    start=start+600/lrl
 	    return move(schwelle,start,tl,zugnr)
 	  else:
-	    sh1=schwelle+3000000
+	    schwelle=schwelle+3000000
 	    print 'error'
-	    i= 0
-    return start*lrl/600, fill(movelist), max(movelist)
-	
-  
+	    i=0
+    if start!=spab[zugnr]*600/lrl:
+	  moeglicheabfahrt[zugnr].append(start)
+	  return move(schwelle, start+1, tl, zugnr)
+    else:
+	  return start*lrl/600, fill(movelist), max(leertray)
 	  
 	
       
