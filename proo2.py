@@ -1,3 +1,5 @@
+import sys
+sys.setrecursionlimit(50000)	# funktionen darf sich 500000 mal selbst aufrufen
 from sys import argv
 import pylab as pl
 import numpy as np
@@ -7,12 +9,15 @@ rl=instanzen.readlines()
 
 komprate=raw_input('Wieviele Werte sollen jeweils zusammengefasst werden? ')
 lrl=int(komprate)	# Eingabe als Zahl auffassen
+kompschwelle=raw_input('Um wie viel soll die Schwelle erhoeht werden? (In 1/x) ')
+schwellekomp=int(kompschwelle)
 
+fahrzeiten={}	# fahrzeiten dictionairy, einfacher beim Zugriff
 lepr={}		# leistungsprofil dictionairy {zugnummer:array(leistungswerte)}
+frab={}		# frueheste abfahrtszeit dictionary {zugnunner: frueheste abfahrt}
 spab={}		# spaeteste abfahrtszeit dictionairy {zugnummer:spaeteste abfahrtszeit}
 mindesthaltezeit={}	# {zugnummer: [strecke, mindesthaltezeit]}
 tm=0		# temporaere valiable speichert in der folgenden Schleife die Zeile vor der aktuellen
-fahrzeiten={}
 mz=0
 
 for l in range(len(rl)):
@@ -23,8 +28,10 @@ for l in range(len(rl)):
         az=int(ls)	# analog Anzahl Zuege
     if tm=="ZUG_NR":
         zn=int(ls)	# Zugnummer wird glich in lepr mit dem jeweiligen Leistungsprofil eingetragen
+    if tm=="FRUEHESTE_ABFAHRT":
+	frab.update({zn:int(ls)})
     if tm=="SPAETESTE_ABFAHRT":
-        spab.update({zn:int(ls)})	# spaeteste Abfahrtszeit fuer Zug in spab eingetragen
+        spab.update({zn:int(ls)})	# spaeteste Abfahrtszeit fuer Zug in spab eingetragen    
     if tm=="FAHRZEIT":
 	fz=int(ls)*600
 	fahrzeiten.update({zn:int(ls)})
@@ -77,9 +84,9 @@ def widerf(zugnr):		# zieht Leistungswerte wieder auf Originallaenge, zum Vergle
 peaks=[]
 for i in range(1,az+1):
   peaks.append(max(lepr[i]))
-sw=max(peaks)/2
+sw = max(peaks)/az
 tal=-sw
-print max(peaks)  
+peaks_sortiert=sorted(peaks)
 
 def erf(zugnr):		# Liste mit 1 fuer Werte ueber Schwelle, -1 fuer Taeler, 0 sonst
   werte=bound(zugnr)
@@ -108,55 +115,39 @@ for n in range(1, az+1):
     dauer.append(spab[n]+fahrzeiten[n])
 maxdauer =  max(dauer)				# Maximale dauer
       
-print maxdauer
+#print maxdauer
 leertray = [0]*(maxdauer*600/lrl)
 #print leertray
 #print len(leertray)
 
 def fill(liste):
   for i in range(len(liste)):
-      leertray[i] += liste[i]
+      leertray[i]+=liste[i]
   return leertray
 
-def empty(liste):				#zieht liste von leertray ab
-    for i in range(len(liste)):		# weiss nicht ob es schon funzt
-      leertray[i] -=liste[i]
-    return leertray
-    
-    
+  
 def check(zugnr):
   tl=bound(zugnr)
-  start=0
-  return move(sw,start,tl,zugnr,3)
-
-moeglicheabfahrt={}  
-for i in range(1,az+1):  
-    moeglicheabfahrt.update({i:[]})		# {zugnr: Abfahrtszeit}
-    
-peak=[]  
-def move(schwelle,start, tl, zugnr,k ):	# k mal wird die erste loesung uebersprungen
+  frueheste=int(frab[zugnr])*600/lrl
+  start=(int(frab[zugnr]))*600/lrl
+  schwelle=sw
+  return move(schwelle,start,tl,zugnr, frueheste)
+	 
+def move(schwelle,start, tl, zugnr, frueheste):
     movelist=[0]*start+tl
     for i in range(len(movelist)):
-      if movelist[i]+leertray[i]>schwelle*3/4:
+      if movelist[i]+leertray[i]>schwelle:
 	  if start<(spab[zugnr])*600/lrl:
 	    start=start+600/lrl
-	    return move(schwelle,start,tl,zugnr, k)
+	    return move(schwelle,start,tl,zugnr, frueheste)
 	  else:
-	    schwelle += 1/4*schwelle
-	    #print 'error'
-	    i=0
-	      
-    if k > 1:					# so lange k groesser 1 ist
-	fill(movelist)				# movelist fuellen um peak zu finden
-	peak.append([max(leertray), zugnr, start])	# peak in liste eintragen um spaeter verlgiechen zu koennen
-	empty(movelist)				# movelist wieder abziehen
-	return move(schwelle, start, tl, zugnr, k-1)	#mit k-1 erneut starten
-	# evtl noch start verschieben???
-    else:
-	return start*lrl/600, fill(movelist), max(leertray)
-
-
+	    return move(schwelle+schwelle*1/schwellekomp, frueheste , tl, zugnr, frueheste)
+    return start*lrl/600, fill(movelist), max(leertray)
 	
+  
+	  
+	
+      
 length=len(lepr[1])
 
 
@@ -187,29 +178,27 @@ abl=[]
 for v in spab.values():
   if v not in abl:
     abl.append(v)
+    
 
-print abl
+#print abl
 Zeiten = []
 
+
+# sortierung: peaks: nach peaks sortiert
+#	      abl: nach abfahrtszeit sortiert
+# zum aendern peaks durch abl und max(lepr[i]) durch spab[i] ersetzen
+# oder umgekehrt 
 for v in sorted(abl):
-    for i in range(1,az+1):
-      if spab[i]==v:
-	  zeit,bina, maxpeak=check(i)
-	  print 'Zug:',i,'Sp.Ab.:',v,'Ab.zeit:',zeit, 'MaxPeak', maxpeak#Tray:',bina 
-	  Zeiten.append({i: zeit})
-	#if zeit=='Error':
-	  #print i
+  for i in range(1,az+1):
+    if spab[i]==v:
+      zeit,bina, maxpeak=check(i)
+      print 'Zug:',i,'Sp.Ab.:',v, '	Fr. Ab.:', frab[i], 'Ab.zeit:',zeit, 'MaxPeak', maxpeak#Tray:',bina 
+      Zeiten.append({i: zeit})
+      #if zeit=='Error':
+	#print i
 	
-print peak
-
-mini=[]
-
-for i in range(len(peak)):
-    mini.append(peak[i][0])
-    print mini
-    print min(mini)
-    
-print Zeiten
+print max(peaks)  
+print Zeiten, maxpeak
 
 pl.plot(range(1,pi*600+1),wide(bina),label='binaer',color='k',linewidth=2)
 
