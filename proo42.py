@@ -1,6 +1,7 @@
 import sys
 sys.setrecursionlimit(50000)	# funktionen darf sich 500000 mal selbst aufrufen
 from sys import argv
+from time import clock
 import pylab as pl
 import numpy as np
 import operator
@@ -13,7 +14,10 @@ rl=instanzen.readlines()
 lrl=20
 #kompschwelle=raw_input('Um wie viel soll die Schwelle erhoeht werden? (In 1/x) ')
 #schwellekomp=int(kompschwelle)
-schwellekomp=4
+schwellekomp=10			# 10 hat sich als guter Wert etabliert
+
+t1=clock()			# laufzeit messen: anfangszeit
+
 
 #Schneller bei mehrfachem Ausprobieren
 
@@ -277,7 +281,10 @@ def pvz(pzl,twl):
 print findezuege(bina)
 
 #print max(bina), max(schub(6,bina))
-      
+
+t2=clock()				# laufzeit messen: endzeit
+d=t2-t1					# laufzeit berechnen
+print d/60, "min"      
 pl.plot(range(1,pi*600+1),wide(bina),label='binaer',color='k',linewidth=1)
 
 pl.legend()	# Legt Legende an
